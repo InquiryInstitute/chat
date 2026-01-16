@@ -54,7 +54,8 @@ jobs:
       - name: Add redirect and guest access script to Element Web index.html
         run: |
           # Add script to redirect to room and auto-continue as guest
-          REDIRECT_SCRIPT='<script>
+          cat >> element-web/webapp/index.html << 'SCRIPT_TAG'
+          <script>
           (function() {
             // Immediate redirect to room if no hash
             if(!window.location.hash || window.location.hash === "#" || window.location.hash === "#/") {
@@ -62,24 +63,41 @@ jobs:
             }
             // Auto-continue as guest when login page loads
             setTimeout(function() {
-              var guestButton = document.querySelector("[data-testid=\\"continue-as-guest\\"], .mx_AccessibleButton[aria-label*=\\"guest\\"], button:contains(\\"Continue as guest\\")");
+              var guestButton = document.querySelector('[data-testid="continue-as-guest"], .mx_AccessibleButton[aria-label*="guest" i], button[aria-label*="guest" i]');
               if(guestButton) {
                 guestButton.click();
               }
             }, 1000);
             // Also try to detect and click guest button after Element loads
-            var observer = new MutationObserver(function() {
-              var guestBtn = document.querySelector("button:contains(\\"Continue as guest\\"), [aria-label*=\\"guest\\" i]");
-              if(guestBtn && !guestBtn.disabled) {
-                guestBtn.click();
-                observer.disconnect();
-              }
-            });
-            observer.observe(document.body, { childList: true, subtree: true });
+            if(document.body) {
+              var observer = new MutationObserver(function() {
+                var guestBtn = document.querySelector('button[aria-label*="guest" i], [data-testid="continue-as-guest"]');
+                if(guestBtn && !guestBtn.disabled) {
+                  guestBtn.click();
+                  observer.disconnect();
+                }
+              });
+              observer.observe(document.body, { childList: true, subtree: true });
+            }
           })();
-          </script>'
-          # Insert script in head for early execution
-          sed -i "s|</head>|${REDIRECT_SCRIPT}</head>|" element-web/webapp/index.html
+          </script>
+          SCRIPT_TAG
+          # Move script to head (before </head>)
+          python3 << 'PYTHON_SCRIPT'
+          import re
+          with open('element-web/webapp/index.html', 'r') as f:
+              content = f.read()
+          # Extract the script we just added
+          script_match = re.search(r'(<script>.*?</script>)', content, re.DOTALL)
+          if script_match:
+              script = script_match.group(1)
+              # Remove from body
+              content = content.replace(script, '')
+              # Insert before </head>
+              content = content.replace('</head>', f'{script}\n</head>')
+              with open('element-web/webapp/index.html', 'w') as f:
+                  f.write(content)
+          PYTHON_SCRIPT
 
       - name: Copy CNAME for custom domain
         run: |
