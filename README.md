@@ -1,187 +1,93 @@
 # Inquiry Institute Chat
 
-LibreChat frontend for Inquiry Institute, connected to our Supabase llm-gateway.
-
-## Features
-
-- ✅ LibreChat UI for chatting with faculty personas
-- ✅ Connected to Supabase llm-gateway (OpenRouter GPT-OSS-120B)
-- ✅ Persona selector: type "plato" and it automatically maps to "a.plato"
-- ✅ Custom domain: chat.inquiry.institute
+Simple chat interface for Inquiry Institute faculty personas.
 
 ## Quick Start
 
-### 1. Clone and Setup
+### Option 1: Direct URL (Recommended)
 
-```bash
-cd ~/GitHub/chat
-cp .env.example .env
-# Edit .env and add your SUPABASE_ANON_KEY
+Open in browser with faculty parameter:
+```
+http://chat.inquiry.institute?faculty=plato
+http://chat.inquiry.institute?faculty=kant
+http://chat.inquiry.institute?faculty=nietzsche
 ```
 
-### 2. Generate JWT Secrets
+The interface will automatically:
+- Read the `faculty` parameter from the URL
+- Map short names to full slugs ("plato" → "a.plato")
+- Pass the faculty to the chat API
+- Update the URL when you change faculty
 
-```bash
-# Generate secure random strings for JWT secrets
-openssl rand -base64 32  # For JWT_SECRET
-openssl rand -base64 32  # For JWT_REFRESH_SECRET
-```
+### Option 2: Local Development
 
-Add these to your `.env` file.
+1. Serve the `public/index.html` file:
+   ```bash
+   # Using Python
+   cd public
+   python3 -m http.server 8000
+   
+   # Or using Node.js
+   npx serve public
+   ```
 
-### 3. Start LibreChat with Persona Proxy
+2. Open: http://localhost:8000?faculty=plato
 
-```bash
-# Option 1: With persona proxy (recommended - handles persona mapping)
-docker-compose -f docker-compose.proxy.yml up -d
+## Features
 
-# Option 2: Direct to llm-gateway (manual persona handling)
-docker-compose up -d
-```
+✅ **URL-based faculty selection** - `?faculty=plato`  
+✅ **Automatic persona mapping** - "plato" → "a.plato"  
+✅ **Simple, clean UI** - No complex setup needed  
+✅ **Works with chat-api or llm-gateway** - Automatic fallback  
+✅ **Real-time chat** - Streaming responses  
 
-LibreChat will be available at: http://localhost:3080
+## Faculty Names
 
-The persona proxy (if used) runs on port 3081 and automatically maps persona names.
-
-## Configuration
-
-### Environment Variables
-
-- `SUPABASE_ANON_KEY` - Your Supabase anonymous key (required)
-- `JWT_SECRET` - Secret for JWT token signing (required)
-- `JWT_REFRESH_SECRET` - Secret for JWT refresh tokens (required)
-- `APP_DOMAIN` - Domain for the app (default: chat.inquiry.institute)
-- `DEFAULT_MODEL` - Default model to use (default: openai/gpt-oss-120b)
-
-### Persona Selection
-
-Users can type persona names in the chat, and they will be automatically mapped:
-- "plato" → "a.plato"
-- "kant" → "a.kant"
-- "nietzsche" → "a.nietzsche"
-
-The persona is sent to the llm-gateway via the `x-persona` header or `persona` parameter.
-
-## DNS Setup
-
-To set up chat.inquiry.institute:
-
-```bash
-# Run the DNS setup script
-./scripts/setup-dns.sh
-```
-
-Or manually via AWS Route 53:
-```bash
-aws route53 change-resource-record-sets \
-  --hosted-zone-id Z053032935YKZE3M0E0D1 \
-  --change-batch '{
-    "Changes": [{
-      "Action": "UPSERT",
-      "ResourceRecordSet": {
-        "Name": "chat.inquiry.institute",
-        "Type": "A",
-        "TTL": 300,
-        "ResourceRecords": [{"Value": "YOUR_SERVER_IP"}]
-      }
-    }]
-  }'
-```
-
-## Architecture
-
-### With Persona Proxy (Recommended)
-
-```
-User Browser
-  ↓
-LibreChat (chat.inquiry.institute)
-  ↓
-Persona Proxy (port 3081) - Maps "plato" → "a.plato"
-  ↓
-Supabase llm-gateway Edge Function
-  ↓
-OpenRouter API
-  ↓
-GPT-OSS-120B Model
-```
-
-### Direct Connection
-
-```
-User Browser
-  ↓
-LibreChat (chat.inquiry.institute)
-  ↓
-Supabase llm-gateway Edge Function
-  ↓
-OpenRouter API
-  ↓
-GPT-OSS-120B Model
-```
-
-## Persona Mapping
-
-The persona mapper (`persona-mapper.js`) handles:
-- Short name → Full slug conversion ("plato" → "a.plato")
-- Display name generation ("a.plato" → "Plato")
-- Persona list for UI dropdowns
-
-## Development
-
-### Local Development
-
-```bash
-# Start services
-docker-compose up
-
-# View logs
-docker-compose logs -f librechat
-
-# Stop services
-docker-compose down
-```
-
-### Custom Persona Mappings
-
-Edit `persona-mapper.js` to add new persona mappings:
-
-```javascript
-const PERSONA_MAP = {
-  'newpersona': 'a.newpersona',
-  // ...
-};
-```
+You can use short names or full slugs:
+- `?faculty=plato` or `?faculty=a.plato`
+- `?faculty=kant` or `?faculty=a.kant`
+- `?faculty=nietzsche` or `?faculty=a.nietzsche`
+- `?faculty=einstein` or `?faculty=a.einstein`
+- And many more...
 
 ## Deployment
 
-### Production Deployment
+### Static Hosting (GitHub Pages, Netlify, Vercel)
 
-1. Set up environment variables on your hosting platform
-2. Point DNS to your server IP
-3. Run `docker-compose up -d`
-4. Configure reverse proxy (nginx/traefik) for HTTPS
+1. Deploy the `public/` directory
+2. Point `chat.inquiry.institute` DNS to your hosting
+3. Done! Users can use `?faculty=plato` in the URL
 
-### Docker Compose Production
+### Docker (with LibreChat)
 
-```bash
-docker-compose -f docker-compose.yml up -d
+See `docker-compose.yml` for LibreChat setup.
+
+## API Endpoints
+
+The chat interface uses:
+1. **chat-api** (preferred): `/functions/v1/chat-api/v1/chat/completions`
+2. **llm-gateway** (fallback): `/functions/v1/llm-gateway/v1/chat/completions`
+
+Both endpoints support the `x-faculty` or `x-persona` header.
+
+## Customization
+
+Edit `public/index.html` to:
+- Change styling
+- Add more faculty mappings
+- Modify the UI layout
+- Add features
+
+## Architecture
+
 ```
-
-## Troubleshooting
-
-### LibreChat not connecting to llm-gateway
-
-1. Check `SUPABASE_ANON_KEY` is set correctly
-2. Verify `OPENAI_BASE_URL` points to the correct endpoint
-3. Check Supabase Edge Function logs
-
-### Persona not working
-
-1. Verify persona is in `persona-mapper.js`
-2. Check that persona is sent in request headers
-3. Review llm-gateway logs for persona processing
-
-## License
-
-Part of Inquiry Institute infrastructure.
+User Browser
+  ↓
+index.html (reads ?faculty=plato from URL)
+  ↓
+chat-api Edge Function (or llm-gateway)
+  ↓
+OpenRouter API
+  ↓
+GPT-OSS-120B Model
+```
