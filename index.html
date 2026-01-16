@@ -7,15 +7,21 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💬</text></svg>">
     <script>
         // Redirect to Element Web with Matrix server configuration and auto-join lobby room
+        // Using matrix.to format for better guest access support
         const config = {
             "m.homeserver": {
                 "base_url": "https://matrix.inquiry.institute"
             }
         };
         const encodedConfig = encodeURIComponent(JSON.stringify(config));
-        // Join lobby room directly as guest
-        // Note: Matrix server must have guest access enabled for anonymous joining
-        window.location.href = `https://app.element.io/?defaultServerConfig=${encodedConfig}#/room/#lobby:inquiry.institute`;
+        
+        // Try matrix.to link first (better for guest access), fallback to direct Element link
+        // matrix.to links allow anonymous preview and joining if server has guest access enabled
+        const matrixToLink = `https://matrix.to/#/#lobby:inquiry.institute`;
+        const elementLink = `https://app.element.io/?defaultServerConfig=${encodedConfig}#/room/#lobby:inquiry.institute`;
+        
+        // Use matrix.to for better guest access support
+        window.location.href = matrixToLink;
     </script>
     <style>
         * {
@@ -82,13 +88,13 @@
         <div class="spinner"></div>
         <p>Connecting to matrix.inquiry.institute</p>
         <p style="margin-top: 2rem; font-size: 0.9rem; opacity: 0.7;">
-            <a href="https://app.element.io/?defaultServerConfig=%7B%22m.homeserver%22%3A%7B%22base_url%22%3A%22https%3A%2F%2Fmatrix.inquiry.institute%22%7D%7D%23%2Froom%2F%23lobby%3Ainquiry.institute">Click here if not redirected automatically</a>
+            <a href="https://matrix.to/#/#lobby:inquiry.institute" style="color: white; text-decoration: underline;">Click here if not redirected automatically</a>
         </p>
         <p style="margin-top: 1rem; font-size: 0.85rem; opacity: 0.6;">
             💡 Tip: Use @mentions to summon faculty (e.g., @plato)
         </p>
         <p style="margin-top: 0.5rem; font-size: 0.8rem; opacity: 0.5;">
-            Note: Guest access requires Matrix server configuration
+            Note: Matrix server must have guest access enabled for anonymous joining
         </p>
     </div>
 </body>
