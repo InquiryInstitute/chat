@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inquiry Institute Chat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 1.5rem;
+        }
+
+        .faculty-badge {
+            background: #667eea;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 500;
+            text-transform: capitalize;
+        }
+
+        .faculty-selector {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .faculty-selector input {
+            padding: 0.5rem 1rem;
+            border: 2px solid #667eea;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            width: 150px;
+        }
+
+        .faculty-selector button {
+            padding: 0.5rem 1rem;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .faculty-selector button:hover {
+            background: #5568d3;
+        }
+
+        .chat-container {
+            flex: 1;
+            max-width: 1200px;
+            width: 100%;
+            margin: 2rem auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .message {
+            display: flex;
+            gap: 1rem;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .message.user .message-avatar {
+            background: #667eea;
+        }
+
+        .message.assistant .message-avatar {
+            background: #764ba2;
+        }
+
+        .message-content {
+            flex: 1;
+            padding: 1rem;
+            border-radius: 15px;
+            max-width: 70%;
+        }
+
+        .message.user .message-content {
+            background: #667eea;
+            color: white;
+        }
+
+        .message.assistant .message-content {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .message-content p {
+            margin: 0;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
+        .input-area {
+            padding: 1.5rem;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 1rem;
+        }
+
+        .input-area input {
+            flex: 1;
+            padding: 1rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        .input-area input:focus {
+            border-color: #667eea;
+        }
+
+        .input-area button {
+            padding: 1rem 2rem;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .input-area button:hover:not(:disabled) {
+            background: #5568d3;
+        }
+
+        .input-area button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            color: #666;
+            padding: 1rem;
+        }
+
+        .loading-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #667eea;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+
+        .loading-dot:nth-child(1) { animation-delay: -0.32s; }
+        .loading-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% {
+                transform: scale(0);
+            }
+            40% {
+                transform: scale(1);
+            }
+        }
+
+        .welcome {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+
+        .welcome h2 {
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Inquiry Institute Chat</h1>
+        <div class="faculty-selector">
+            <span class="faculty-badge" id="facultyBadge">Select Faculty</span>
+            <input type="text" id="facultyInput" placeholder="e.g., plato" />
+            <button onclick="updateFaculty()">Set</button>
+        </div>
+    </div>
+
+    <div class="chat-container">
+        <div class="messages" id="messages">
+            <div class="welcome">
+                <h2>Welcome to Inquiry Institute Chat</h2>
+                <p>Select a faculty member to begin a conversation</p>
+                <p style="margin-top: 1rem; font-size: 0.9rem; color: #999;">
+                    Try: plato, kant, nietzsche, einstein, or any faculty name
+                </p>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <input 
+                type="text" 
+                id="messageInput" 
+                placeholder="Type your message..." 
+                onkeypress="handleKeyPress(event)"
+            />
+            <button id="sendButton" onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://xougqdomkoisrxdnagcj.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhvdWdxZG9ta29pc3J4ZG5hZ2NqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU5NjIwMTIsImV4cCI6MjA4MTUzODAxMn0.eA1vXG6UVI1AjUOXN7q3gTlSyPoDByuVehOcKPjHmvs';
+        
+        // Persona mapping
+        const PERSONA_MAP = {
+            'plato': 'a.plato',
+            'aristotle': 'a.aristotle',
+            'kant': 'a.kant',
+            'nietzsche': 'a.nietzsche',
+            'hegel': 'a.hegel',
+            'socrates': 'a.socrates',
+            'confucius': 'a.confucius',
+            'spinoza': 'a.spinoza',
+            'descartes': 'a.descartes',
+            'einstein': 'a.einstein',
+            'darwin': 'a.darwin',
+            'curie': 'a.curie',
+            'turing': 'a.turing',
+        };
+
+        function normalizePersona(input) {
+            if (!input) return null;
+            const trimmed = input.trim().toLowerCase();
+            if (trimmed.startsWith('a.')) return trimmed;
+            if (PERSONA_MAP[trimmed]) return PERSONA_MAP[trimmed];
+            return `a.${trimmed}`;
+        }
+
+        function getPersonaDisplayName(slug) {
+            if (!slug) return 'Select Faculty';
+            const name = slug.replace(/^a\./, '');
+            return name.charAt(0).toUpperCase() + name.slice(1);
+        }
+
+        // Get faculty from URL parameter
+        function getFacultyFromURL() {
+            const params = new URLSearchParams(window.location.search);
+            const faculty = params.get('faculty');
+            return normalizePersona(faculty);
+        }
+
+        // Update URL with faculty parameter
+        function updateURL(faculty) {
+            const url = new URL(window.location);
+            if (faculty) {
+                url.searchParams.set('faculty', faculty.replace(/^a\./, ''));
+            } else {
+                url.searchParams.delete('faculty');
+            }
+            window.history.pushState({}, '', url);
+        }
+
+        let currentFaculty = getFacultyFromURL();
+
+        function updateFaculty() {
+            const input = document.getElementById('facultyInput').value;
+            const faculty = normalizePersona(input);
+            currentFaculty = faculty;
+            updateFacultyBadge();
+            updateURL(faculty);
+            document.getElementById('facultyInput').value = '';
+        }
+
+        function updateFacultyBadge() {
+            const badge = document.getElementById('facultyBadge');
+            badge.textContent = getPersonaDisplayName(currentFaculty);
+        }
+
+        function addMessage(role, content) {
+            const messagesDiv = document.getElementById('messages');
+            const welcome = messagesDiv.querySelector('.welcome');
+            if (welcome) welcome.remove();
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = role === 'user' ? 'You' : (currentFaculty ? getPersonaDisplayName(currentFaculty).charAt(0) : 'AI');
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            const p = document.createElement('p');
+            p.textContent = content;
+            contentDiv.appendChild(p);
+            
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(contentDiv);
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function showLoading() {
+            const messagesDiv = document.getElementById('messages');
+            const loading = document.createElement('div');
+            loading.className = 'loading';
+            loading.id = 'loading';
+            loading.innerHTML = '<div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div><span>Thinking...</span>';
+            messagesDiv.appendChild(loading);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function hideLoading() {
+            const loading = document.getElementById('loading');
+            if (loading) loading.remove();
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            if (!message) return;
+
+            if (!currentFaculty) {
+                alert('Please select a faculty member first');
+                return;
+            }
+
+            addMessage('user', message);
+            input.value = '';
+            
+            const sendButton = document.getElementById('sendButton');
+            sendButton.disabled = true;
+            showLoading();
+
+            try {
+                // Try chat-api first, fallback to llm-gateway
+                let endpoint = `${SUPABASE_URL}/functions/v1/chat-api/v1/chat/completions`;
+                let response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'Content-Type': 'application/json',
+                        'x-faculty': currentFaculty,
+                    },
+                    body: JSON.stringify({
+                        model: 'openai/gpt-oss-120b',
+                        messages: [
+                            { role: 'user', content: message }
+                        ],
+                    }),
+                });
+
+                // If chat-api not found, use llm-gateway
+                if (!response.ok && response.status === 404) {
+                    endpoint = `${SUPABASE_URL}/functions/v1/llm-gateway/v1/chat/completions`;
+                    response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                            'Content-Type': 'application/json',
+                            'x-persona': currentFaculty,
+                        },
+                        body: JSON.stringify({
+                            model: 'openai/gpt-oss-120b',
+                            messages: [
+                                { role: 'user', content: message }
+                            ],
+                        }),
+                    });
+                }
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+                }
+
+                const data = await response.json();
+                const reply = data.choices?.[0]?.message?.content || 'No response received';
+                addMessage('assistant', reply);
+            } catch (error) {
+                addMessage('assistant', `Error: ${error.message}`);
+            } finally {
+                hideLoading();
+                sendButton.disabled = false;
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        // Initialize
+        if (currentFaculty) {
+            updateFacultyBadge();
+        }
+
+        // Allow Enter in faculty input
+        document.getElementById('facultyInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                updateFaculty();
+            }
+        });
+    </script>
+</body>
+</html>
