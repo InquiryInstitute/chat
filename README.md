@@ -1,93 +1,80 @@
 # Inquiry Institute Chat
 
-Simple chat interface for Inquiry Institute faculty personas.
+Element Web interface for chatting with faculty members via Matrix.
 
-## Quick Start
+## Quick Access
 
-### Option 1: Direct URL (Recommended)
+Visit: **https://chat.inquiry.institute**
 
-Open in browser with faculty parameter:
-```
-http://chat.inquiry.institute?faculty=plato
-http://chat.inquiry.institute?faculty=kant
-http://chat.inquiry.institute?faculty=nietzsche
-```
+This redirects to Element Web pre-configured to connect to `matrix.inquiry.institute`.
 
-The interface will automatically:
-- Read the `faculty` parameter from the URL
-- Map short names to full slugs ("plato" → "a.plato")
-- Pass the faculty to the chat API
-- Update the URL when you change faculty
+## How It Works
 
-### Option 2: Local Development
+1. **Visit chat.inquiry.institute** → Redirects to Element Web
+2. **Log in** with your Matrix account
+3. **Join or create a room** for chatting
+4. **Faculty bots** can join the room and respond to messages
 
-1. Serve the `public/index.html` file:
-   ```bash
-   # Using Python
-   cd public
-   python3 -m http.server 8000
-   
-   # Or using Node.js
-   npx serve public
-   ```
+## Faculty Bots
 
-2. Open: http://localhost:8000?faculty=plato
-
-## Features
-
-✅ **URL-based faculty selection** - `?faculty=plato`  
-✅ **Automatic persona mapping** - "plato" → "a.plato"  
-✅ **Simple, clean UI** - No complex setup needed  
-✅ **Works with chat-api or llm-gateway** - Automatic fallback  
-✅ **Real-time chat** - Streaming responses  
-
-## Faculty Names
-
-You can use short names or full slugs:
-- `?faculty=plato` or `?faculty=a.plato`
-- `?faculty=kant` or `?faculty=a.kant`
-- `?faculty=nietzsche` or `?faculty=a.nietzsche`
-- `?faculty=einstein` or `?faculty=a.einstein`
+Faculty members are available as Matrix bots:
+- `@a.plato:inquiry.institute`
+- `@a.kant:inquiry.institute`
+- `@a.nietzsche:inquiry.institute`
+- `@a.einstein:inquiry.institute`
 - And many more...
+
+## Creating a Chat Room
+
+### Via Element Web
+
+1. Visit https://chat.inquiry.institute
+2. Log in
+3. Click "+" to create a new room
+4. Name it "Inquiry Institute Chat" (or any name)
+5. Make it public or invite specific users
+6. Invite faculty bots to join
+
+### Via Matrix API
+
+See `ELEMENT_SETUP.md` for API examples.
 
 ## Deployment
 
-### Static Hosting (GitHub Pages, Netlify, Vercel)
+✅ **Deployed on GitHub Pages**: https://inquiryinstitute.github.io/chat/
 
-1. Deploy the `public/` directory
-2. Point `chat.inquiry.institute` DNS to your hosting
-3. Done! Users can use `?faculty=plato` in the URL
+The site redirects to Element Web with Matrix server pre-configured.
 
-### Docker (with LibreChat)
+## DNS
 
-See `docker-compose.yml` for LibreChat setup.
+✅ **DNS Configured**: `chat.inquiry.institute` → GitHub Pages (CNAME)
 
-## API Endpoints
+## Files
 
-The chat interface uses:
-1. **chat-api** (preferred): `/functions/v1/chat-api/v1/chat/completions`
-2. **llm-gateway** (fallback): `/functions/v1/llm-gateway/v1/chat/completions`
-
-Both endpoints support the `x-faculty` or `x-persona` header.
+- `public/index.html` - Redirect page to Element Web
+- `public/config.json` - Element configuration (for custom build)
+- `ELEMENT_SETUP.md` - Detailed setup instructions
 
 ## Customization
 
-Edit `public/index.html` to:
-- Change styling
-- Add more faculty mappings
-- Modify the UI layout
-- Add features
+To build a custom Element Web:
 
-## Architecture
+1. Clone Element Web: `git clone https://github.com/vector-im/element-web.git`
+2. Copy `public/config.json` to `element-web/config.json`
+3. Build: `npm install && npm run build`
+4. Deploy `webapp/` to GitHub Pages
 
-```
-User Browser
-  ↓
-index.html (reads ?faculty=plato from URL)
-  ↓
-chat-api Edge Function (or llm-gateway)
-  ↓
-OpenRouter API
-  ↓
-GPT-OSS-120B Model
-```
+## Next Steps
+
+1. ✅ Element Web redirect configured
+2. ✅ GitHub Pages deployed
+3. ✅ DNS configured
+4. ⏳ Create Matrix room for chat
+5. ⏳ Invite faculty bots to room
+6. ⏳ Test faculty bot responses
+
+## Documentation
+
+- **Setup Guide**: `ELEMENT_SETUP.md`
+- **Matrix Server**: https://matrix.inquiry.institute
+- **Element Web**: https://app.element.io
