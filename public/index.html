@@ -6,17 +6,14 @@
     <title>Inquiry Institute Chat</title>
     <link rel="icon" href="data:,">
     <script>
-        // Redirect to Element Web with Matrix server configuration
-        (function() {
-            const config = {
-                "m.homeserver": {
-                    "base_url": "https://matrix.inquiry.institute"
-                }
-            };
-            const encodedConfig = encodeURIComponent(JSON.stringify(config));
-            const elementUrl = `https://app.element.io/?defaultServerConfig=${encodedConfig}`;
-            window.location.replace(elementUrl);
-        })();
+        // Immediate redirect to Element Web with Matrix server configuration
+        const matrixConfig = {
+            "m.homeserver": {
+                "base_url": "https://matrix.inquiry.institute"
+            }
+        };
+        const encodedConfig = encodeURIComponent(JSON.stringify(matrixConfig));
+        window.location.replace(`https://app.element.io/?defaultServerConfig=${encodedConfig}`);
     </script>
     <style>
         body {
