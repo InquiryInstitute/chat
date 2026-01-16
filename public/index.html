@@ -4,15 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inquiry Institute Chat</title>
+    <link rel="icon" href="data:,">
     <script>
         // Redirect to Element Web with Matrix server configuration
-        const config = {
-            "m.homeserver": {
-                "base_url": "https://matrix.inquiry.institute"
-            }
-        };
-        const encodedConfig = encodeURIComponent(JSON.stringify(config));
-        window.location.href = `https://app.element.io/?defaultServerConfig=${encodedConfig}`;
+        (function() {
+            const config = {
+                "m.homeserver": {
+                    "base_url": "https://matrix.inquiry.institute"
+                }
+            };
+            const encodedConfig = encodeURIComponent(JSON.stringify(config));
+            const elementUrl = `https://app.element.io/?defaultServerConfig=${encodedConfig}`;
+            window.location.replace(elementUrl);
+        })();
     </script>
     <style>
         body {
@@ -48,7 +52,7 @@
         <h1>Loading Element Web...</h1>
         <p>Connecting to matrix.inquiry.institute</p>
         <p style="margin-top: 2rem; font-size: 0.9rem; opacity: 0.7;">
-            <a href="https://app.element.io/?defaultServerConfig=%7B%22m.homeserver%22%3A%7B%22base_url%22%3A%22https%3A%2F%2Fmatrix.inquiry.institute%22%7D%7D">Click here if not redirected automatically</a>
+            <a href="https://app.element.io/?defaultServerConfig=%7B%22m.homeserver%22%3A%7B%22base_url%22%3A%22https%3A%2F%2Fmatrix.inquiry.institute%22%7D%7D">Click here if not redirected</a>
         </p>
     </div>
 </body>
