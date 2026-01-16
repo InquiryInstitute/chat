@@ -53,50 +53,92 @@ jobs:
 
       - name: Add redirect and guest access script to Element Web index.html
         run: |
-          # Add script to redirect to room and auto-continue as guest
-          cat >> element-web/webapp/index.html << 'SCRIPT_TAG'
-          <script>
-          (function() {
-            // Immediate redirect to room if no hash
-            if(!window.location.hash || window.location.hash === "#" || window.location.hash === "#/") {
-              window.location.hash = "#/room/%23lobby:inquiry.institute";
-            }
-            // Auto-continue as guest when login page loads
-            setTimeout(function() {
-              var guestButton = document.querySelector('[data-testid="continue-as-guest"], .mx_AccessibleButton[aria-label*="guest" i], button[aria-label*="guest" i]');
-              if(guestButton) {
-                guestButton.click();
-              }
-            }, 1000);
-            // Also try to detect and click guest button after Element loads
-            if(document.body) {
-              var observer = new MutationObserver(function() {
-                var guestBtn = document.querySelector('button[aria-label*="guest" i], [data-testid="continue-as-guest"]');
-                if(guestBtn && !guestBtn.disabled) {
-                  guestBtn.click();
-                  observer.disconnect();
-                }
-              });
-              observer.observe(document.body, { childList: true, subtree: true });
-            }
-          })();
-          </script>
-          SCRIPT_TAG
-          # Move script to head (before </head>)
+          # Add script to automatically login as guest and join room
           python3 << 'PYTHON_SCRIPT'
           import re
+          
           with open('element-web/webapp/index.html', 'r') as f:
               content = f.read()
-          # Extract the script we just added
-          script_match = re.search(r'(<script>.*?</script>)', content, re.DOTALL)
-          if script_match:
-              script = script_match.group(1)
-              # Remove from body
-              content = content.replace(script, '')
-              # Insert before </head>
-              content = content.replace('</head>', f'{script}\n</head>')
-              with open('element-web/webapp/index.html', 'w') as f:
-                  f.write(content)
+          
+          # Script to automatically login as guest via Matrix API
+          guest_script = '''<script>
+          (function() {
+            // Check if already logged in
+            if(localStorage.getItem('mx_access_token')) {
+              // Already logged in, just redirect to room
+              if(!window.location.hash || window.location.hash === "#" || window.location.hash === "#/") {
+                window.location.hash = "#/room/%23lobby:inquiry.institute";
+              }
+              return;
+            }
+            
+            // Try to login as guest via Matrix API
+            async function loginAsGuest() {
+              try {
+                const response = await fetch('https://matrix.inquiry.institute/_matrix/client/v3/register?kind=guest', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify({})
+                });
+                
+                if(response.ok) {
+                  const data = await response.json();
+                  // Store access token
+                  localStorage.setItem('mx_access_token', data.access_token);
+                  localStorage.setItem('mx_user_id', data.user_id);
+                  localStorage.setItem('mx_device_id', data.device_id);
+                  
+                  // Redirect to room
+                  window.location.hash = "#/room/%23lobby:inquiry.institute";
+                  // Reload to apply token
+                  window.location.reload();
+                } else {
+                  console.log('Guest login not available, will show login page');
+                  // Fallback: try to find and click guest button
+                  setTimeout(function() {
+                    var guestButton = document.querySelector('[data-testid="continue-as-guest"], .mx_AccessibleButton[aria-label*="guest" i], button[aria-label*="guest" i], button:contains("Continue as guest")');
+                    if(guestButton) {
+                      guestButton.click();
+                    }
+                  }, 2000);
+                  
+                  // Also observe for guest button
+                  if(document.body) {
+                    var observer = new MutationObserver(function() {
+                      var guestBtn = document.querySelector('button[aria-label*="guest" i], [data-testid="continue-as-guest"], button:contains("Continue as guest")');
+                      if(guestBtn && !guestBtn.disabled) {
+                        guestBtn.click();
+                        observer.disconnect();
+                      }
+                    });
+                    observer.observe(document.body, { childList: true, subtree: true });
+                  }
+                }
+              } catch(e) {
+                console.error('Guest login error:', e);
+                // Fallback to redirect
+                if(!window.location.hash || window.location.hash === "#" || window.location.hash === "#/") {
+                  window.location.hash = "#/room/%23lobby:inquiry.institute";
+                }
+              }
+            }
+            
+            // Run on page load
+            if(document.readyState === 'loading') {
+              document.addEventListener('DOMContentLoaded', loginAsGuest);
+            } else {
+              loginAsGuest();
+            }
+          })();
+          </script>'''
+          
+          # Insert before </head>
+          content = content.replace('</head>', f'{guest_script}\n</head>')
+          
+          with open('element-web/webapp/index.html', 'w') as f:
+              f.write(content)
           PYTHON_SCRIPT
 
       - name: Copy CNAME for custom domain
