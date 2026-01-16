@@ -51,19 +51,35 @@ jobs:
         run: |
           yarn build
 
-      - name: Add redirect script to Element Web index.html
+      - name: Add redirect and guest access script to Element Web index.html
         run: |
-          # Add script to redirect to room on load (before Element initializes)
-          # This ensures users land directly in the Lobby room
-          REDIRECT_SCRIPT='<script>if(!window.location.hash || window.location.hash === "#" || window.location.hash === "#/") { window.location.hash = "#/room/%23lobby:inquiry.institute"; }</script>'
-          # Insert script right after <body> tag
-          if grep -q "<body" element-web/webapp/index.html; then
-            sed -i "s|<body|&>${REDIRECT_SCRIPT}|" element-web/webapp/index.html || \
-            sed -i "/<body>/a ${REDIRECT_SCRIPT}" element-web/webapp/index.html
-          else
-            # Fallback: insert before closing </head>
-            sed -i "s|</head>|${REDIRECT_SCRIPT}</head>|" element-web/webapp/index.html
-          fi
+          # Add script to redirect to room and auto-continue as guest
+          REDIRECT_SCRIPT='<script>
+          (function() {
+            // Immediate redirect to room if no hash
+            if(!window.location.hash || window.location.hash === "#" || window.location.hash === "#/") {
+              window.location.hash = "#/room/%23lobby:inquiry.institute";
+            }
+            // Auto-continue as guest when login page loads
+            setTimeout(function() {
+              var guestButton = document.querySelector("[data-testid=\\"continue-as-guest\\"], .mx_AccessibleButton[aria-label*=\\"guest\\"], button:contains(\\"Continue as guest\\")");
+              if(guestButton) {
+                guestButton.click();
+              }
+            }, 1000);
+            // Also try to detect and click guest button after Element loads
+            var observer = new MutationObserver(function() {
+              var guestBtn = document.querySelector("button:contains(\\"Continue as guest\\"), [aria-label*=\\"guest\\" i]");
+              if(guestBtn && !guestBtn.disabled) {
+                guestBtn.click();
+                observer.disconnect();
+              }
+            });
+            observer.observe(document.body, { childList: true, subtree: true });
+          })();
+          </script>'
+          # Insert script in head for early execution
+          sed -i "s|</head>|${REDIRECT_SCRIPT}</head>|" element-web/webapp/index.html
 
       - name: Copy CNAME for custom domain
         run: |
