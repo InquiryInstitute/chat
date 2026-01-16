@@ -17,10 +17,10 @@ services:
       - ALLOW_REGISTRATION=false
       - ALLOW_SOCIAL_LOGIN=false
       
-      # Supabase LLM Gateway Configuration
+      # Supabase Chat API Configuration (with faculty parameter support)
       # LibreChat will use this as a custom OpenAI endpoint
       - OPENAI_API_KEY=${SUPABASE_ANON_KEY}
-      - OPENAI_BASE_URL=https://xougqdomkoisrxdnagcj.supabase.co/functions/v1/llm-gateway/v1
+      - OPENAI_BASE_URL=https://xougqdomkoisrxdnagcj.supabase.co/functions/v1/chat-api/v1
       
       # Optional: Set default model
       - DEFAULT_MODEL=openai/gpt-oss-120b

@@ -34,9 +34,11 @@ services:
       - ALLOW_REGISTRATION=false
       - ALLOW_SOCIAL_LOGIN=false
       
-      # Use persona-proxy instead of direct llm-gateway
+      # Use chat-api (with faculty parameter support) or persona-proxy
       - OPENAI_API_KEY=${SUPABASE_ANON_KEY}
-      - OPENAI_BASE_URL=http://persona-proxy:3081/v1
+      - OPENAI_BASE_URL=https://xougqdomkoisrxdnagcj.supabase.co/functions/v1/chat-api/v1
+      # Alternative: Use persona-proxy for automatic persona extraction from messages
+      # - OPENAI_BASE_URL=http://persona-proxy:3081/v1
       
       # Optional: Set default model
       - DEFAULT_MODEL=openai/gpt-oss-120b
