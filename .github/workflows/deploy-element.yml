@@ -60,11 +60,12 @@ jobs:
           with open('element-web/webapp/index.html', 'r') as f:
               content = f.read()
           
-          # Script to automatically login as guest via Matrix API
+          # Script to automatically login as guest via Matrix API and use Element's storage
           guest_script = '''<script>
           (function() {
-            // Check if already logged in
-            if(localStorage.getItem('mx_access_token')) {
+            // Check if already logged in (Element stores tokens in localStorage with specific keys)
+            const hasToken = Object.keys(localStorage).some(key => key.includes('access_token') || key.includes('matrix'));
+            if(hasToken && !window.location.pathname.includes('login')) {
               // Already logged in, just redirect to room
               if(!window.location.hash || window.location.hash === "#" || window.location.hash === "#/") {
                 window.location.hash = "#/room/%23lobby:inquiry.institute";
@@ -85,32 +86,71 @@ jobs:
                 
                 if(response.ok) {
                   const data = await response.json();
-                  // Store access token
+                  
+                  // Element Web stores credentials in localStorage with specific format
+                  // Try to find the right key pattern and store the token
+                  const baseUrl = 'https://matrix.inquiry.institute';
+                  const storageKey = `mx_access_token:${baseUrl}:${data.user_id}`;
+                  localStorage.setItem(storageKey, data.access_token);
+                  
+                  // Also try Element's default storage format
                   localStorage.setItem('mx_access_token', data.access_token);
                   localStorage.setItem('mx_user_id', data.user_id);
                   localStorage.setItem('mx_device_id', data.device_id);
+                  localStorage.setItem('mx_hs_url', baseUrl);
+                  localStorage.setItem('mx_is_url', 'https://vector.im');
                   
-                  // Redirect to room
+                  // Store in sessionStorage as well (Element sometimes uses this)
+                  sessionStorage.setItem('mx_access_token', data.access_token);
+                  sessionStorage.setItem('mx_user_id', data.user_id);
+                  
+                  // Redirect to room and reload to apply token
                   window.location.hash = "#/room/%23lobby:inquiry.institute";
-                  // Reload to apply token
-                  window.location.reload();
+                  setTimeout(() => window.location.reload(), 100);
                 } else {
-                  console.log('Guest login not available, will show login page');
-                  // Fallback: try to find and click guest button
+                  console.log('Guest registration failed, trying fallback');
+                  // Fallback: redirect to room and let Element handle guest access
+                  if(!window.location.hash || window.location.hash === "#" || window.location.hash === "#/") {
+                    window.location.hash = "#/room/%23lobby:inquiry.institute";
+                  }
+                  
+                  // Try to find and click guest button after a delay
                   setTimeout(function() {
-                    var guestButton = document.querySelector('[data-testid="continue-as-guest"], .mx_AccessibleButton[aria-label*="guest" i], button[aria-label*="guest" i], button:contains("Continue as guest")');
-                    if(guestButton) {
-                      guestButton.click();
+                    const selectors = [
+                      '[data-testid="continue-as-guest"]',
+                      '.mx_AccessibleButton[aria-label*="guest" i]',
+                      'button[aria-label*="guest" i]',
+                      'button:contains("Continue as guest")',
+                      'button:contains("Guest")'
+                    ];
+                    for(const selector of selectors) {
+                      try {
+                        const guestButton = document.querySelector(selector);
+                        if(guestButton && !guestButton.disabled) {
+                          guestButton.click();
+                          return;
+                        }
+                      } catch(e) {}
                     }
                   }, 2000);
                   
                   // Also observe for guest button
                   if(document.body) {
-                    var observer = new MutationObserver(function() {
-                      var guestBtn = document.querySelector('button[aria-label*="guest" i], [data-testid="continue-as-guest"], button:contains("Continue as guest")');
-                      if(guestBtn && !guestBtn.disabled) {
-                        guestBtn.click();
-                        observer.disconnect();
+                    const observer = new MutationObserver(function() {
+                      const selectors = [
+                        'button[aria-label*="guest" i]',
+                        '[data-testid="continue-as-guest"]',
+                        'button:contains("Continue as guest")'
+                      ];
+                      for(const selector of selectors) {
+                        try {
+                          const guestBtn = document.querySelector(selector);
+                          if(guestBtn && !guestBtn.disabled) {
+                            guestBtn.click();
+                            observer.disconnect();
+                            return;
+                          }
+                        } catch(e) {}
                       }
                     });
                     observer.observe(document.body, { childList: true, subtree: true });
@@ -125,12 +165,8 @@ jobs:
               }
             }
             
-            // Run on page load
-            if(document.readyState === 'loading') {
-              document.addEventListener('DOMContentLoaded', loginAsGuest);
-            } else {
-              loginAsGuest();
-            }
+            // Run immediately
+            loginAsGuest();
           })();
           </script>'''
           
