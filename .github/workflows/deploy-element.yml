@@ -131,78 +131,116 @@ jobs:
             
             // Try to click "Explore room" link on welcome page
             function tryClickExploreRoom() {
-              const exploreSelectors = [
-                'a[href*="room"]',
-                'a:contains("Explore")',
-                'a:contains("Browse")',
-                'a:contains("Public")',
-                '[role="link"][href*="room"]'
+              // Try multiple strategies to find the explore room link
+              const strategies = [
+                // Strategy 1: Direct selectors
+                () => {
+                  const links = document.querySelectorAll('a');
+                  for(const link of links) {
+                    const text = (link.textContent || '').trim().toLowerCase();
+                    if(text.includes('explore') && (text.includes('room') || link.href)) {
+                      return link;
+                    }
+                  }
+                  return null;
+                },
+                // Strategy 2: Check href attributes
+                () => {
+                  const links = document.querySelectorAll('a[href]');
+                  for(const link of links) {
+                    if(link.href && (link.href.includes('room') || link.href.includes('#/room'))) {
+                      return link;
+                    }
+                  }
+                  return null;
+                },
+                // Strategy 3: Find by aria-label or data attributes
+                () => {
+                  return document.querySelector('a[aria-label*="explore" i], a[aria-label*="room" i]') ||
+                         document.querySelector('[role="link"][href*="room"]');
+                }
               ];
               
-              for(const sel of exploreSelectors) {
+              for(const strategy of strategies) {
                 try {
-                  const link = document.querySelector(sel);
-                  if(link && link.href && link.href.includes('room')) {
-                    link.click();
+                  const link = strategy();
+                  if(link && link.offsetParent !== null) {
+                    // Found the link, click it
+                    link.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    setTimeout(() => {
+                      link.click();
+                    }, 100);
                     return true;
                   }
-                } catch(e) {}
-              }
-              
-              // Try finding by text content
-              const allLinks = document.querySelectorAll('a');
-              for(const link of allLinks) {
-                const text = (link.textContent || '').toLowerCase();
-                if((text.includes('explore') || text.includes('browse') || text.includes('room')) && link.href) {
-                  link.click();
-                  return true;
+                } catch(e) {
+                  console.error('Error in explore room strategy:', e);
                 }
               }
+              
               return false;
             }
             
-            // Main flow: try guest registration, then fallback to clicking explore
-            registerGuest().then(success => {
-              if(!success) {
-                // If registration fails, wait for page to load and try clicking "Explore room"
-                if(document.readyState === 'loading') {
-                  document.addEventListener('DOMContentLoaded', () => {
+            // Wait for page to fully load, then try strategies
+            function attemptGuestAccess() {
+              // Strategy 1: Try guest registration
+              registerGuest().then(success => {
+                if(!success) {
+                  // Strategy 2: If registration fails, try clicking "Explore room"
+                  const attemptExplore = () => {
+                    // Try immediately
+                    if(tryClickExploreRoom()) return true;
+                    
+                    // If not found, wait a bit and try again
                     setTimeout(() => {
-                      if(!tryClickExploreRoom()) {
-                        // Last resort: navigate directly
-                        window.location.hash = TARGET_ROOM;
-                      }
-                    }, 1000);
-                  });
-                } else {
-                  setTimeout(() => {
-                    if(!tryClickExploreRoom()) {
+                      if(tryClickExploreRoom()) return true;
+                      
+                      // Last resort: navigate directly to room
                       window.location.hash = TARGET_ROOM;
-                    }
-                  }, 1000);
+                    }, 1500);
+                    
+                    return false;
+                  };
+                  
+                  if(document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', () => {
+                      setTimeout(attemptExplore, 500);
+                    });
+                  } else {
+                    setTimeout(attemptExplore, 500);
+                  }
                 }
-              }
-            });
+              });
+            }
             
-            // Also monitor for welcome page and auto-navigate
+            // Run immediately
+            attemptGuestAccess();
+            
+            // Also monitor for welcome page and auto-navigate or click explore
             const checkAndNavigate = () => {
-              if(window.location.hash === '' || window.location.hash === '#' || window.location.hash === '#/' || window.location.hash === '#/welcome') {
+              const currentHash = window.location.hash;
+              if(currentHash === '' || currentHash === '#' || currentHash === '#/' || currentHash === '#/welcome') {
                 const token = hasAuthToken();
                 if(token) {
+                  // We have a token, navigate directly
                   window.location.hash = TARGET_ROOM;
                 } else {
-                  // Try clicking explore room
-                  tryClickExploreRoom();
+                  // No token yet, try clicking explore room
+                  setTimeout(() => {
+                    if(!tryClickExploreRoom()) {
+                      // If clicking fails, navigate anyway
+                      window.location.hash = TARGET_ROOM;
+                    }
+                  }, 500);
                 }
               }
             };
             
-            // Check periodically and on hash change
-            setInterval(checkAndNavigate, 2000);
+            // Check periodically (every 1 second) and on hash change
+            setInterval(checkAndNavigate, 1000);
             window.addEventListener('hashchange', checkAndNavigate);
             
-            // Initial check
-            checkAndNavigate();
+            // Initial check after a short delay
+            setTimeout(checkAndNavigate, 500);
           })();
           </script>'''
           
