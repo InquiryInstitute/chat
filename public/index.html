@@ -3,53 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inquiry Institute Chat</title>
+    <title>Inquiry Institute Chat - Lobby</title>
     <link rel="icon" href="data:,">
-    <script>
-        // Immediate redirect to Element Web with Matrix server configuration
-        const matrixConfig = {
-            "m.homeserver": {
-                "base_url": "https://matrix.inquiry.institute"
-            }
-        };
-        const encodedConfig = encodeURIComponent(JSON.stringify(matrixConfig));
-        window.location.replace(`https://app.element.io/?defaultServerConfig=${encodedConfig}`);
-    </script>
     <style>
-        body {
+        * {
             margin: 0;
-            padding: 2rem;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #0e1621;
-            color: #fff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            text-align: center;
+            padding: 0;
+            box-sizing: border-box;
         }
-        .loading {
-            animation: pulse 2s ease-in-out infinite;
+        html, body {
+            height: 100%;
+            overflow: hidden;
         }
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-        a {
-            color: #00b8d4;
-            text-decoration: none;
-        }
-        a:hover {
-            text-decoration: underline;
+        #element-container {
+            width: 100%;
+            height: 100vh;
+            border: none;
         }
     </style>
 </head>
 <body>
-    <div class="loading">
+    <script>
+        // Redirect directly to Lobby room in self-hosted Element Web
+        // Element Web will be deployed to the same GitHub Pages domain
+        window.location.replace('#/room/%23lobby:inquiry.institute');
+    </script>
+    <div style="text-align: center; padding: 2rem; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0e1621; color: #fff; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center;">
         <h1>Loading Element Web...</h1>
         <p>Connecting to matrix.inquiry.institute</p>
         <p style="margin-top: 2rem; font-size: 0.9rem; opacity: 0.7;">
-            <a href="https://app.element.io/?defaultServerConfig=%7B%22m.homeserver%22%3A%7B%22base_url%22%3A%22https%3A%2F%2Fmatrix.inquiry.institute%22%7D%7D">Click here if not redirected</a>
+            <a href="#/room/%23lobby:inquiry.institute" style="color: #00b8d4; text-decoration: none;">Click here if not redirected</a>
         </p>
     </div>
 </body>

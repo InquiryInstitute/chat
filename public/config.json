@@ -38,5 +38,7 @@
   },
   "jitsi": {
     "preferredDomain": "meet.jit.si"
-  }
+  },
+  "default_room_id": "#lobby:inquiry.institute",
+  "welcomePageUrl": "#/room/%23lobby:inquiry.institute"
 }

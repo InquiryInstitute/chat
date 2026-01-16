@@ -1,0 +1,88 @@
+name: Deploy Element Web to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout chat repo
+        uses: actions/checkout@v4
+
+      - name: Checkout Element Web
+        uses: actions/checkout@v4
+        with:
+          repository: element-hq/element-web
+          path: element-web
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: element-web/package-lock.json
+
+      - name: Install dependencies
+        working-directory: element-web
+        run: npm ci
+
+      - name: Copy custom config
+        run: |
+          cp public/config.json element-web/config.json
+
+      - name: Build Element Web
+        working-directory: element-web
+        run: |
+          npm run build
+
+      - name: Add redirect script to Element Web index.html
+        run: |
+          # Add script to redirect to room on load (before Element initializes)
+          # This ensures users land directly in the Lobby room
+          REDIRECT_SCRIPT='<script>if(!window.location.hash || window.location.hash === "#" || window.location.hash === "#/") { window.location.hash = "#/room/%23lobby:inquiry.institute"; }</script>'
+          # Insert script right after <body> tag
+          if grep -q "<body" element-web/webapp/index.html; then
+            sed -i "s|<body|&>${REDIRECT_SCRIPT}|" element-web/webapp/index.html || \
+            sed -i "/<body>/a ${REDIRECT_SCRIPT}" element-web/webapp/index.html
+          else
+            # Fallback: insert before closing </head>
+            sed -i "s|</head>|${REDIRECT_SCRIPT}</head>|" element-web/webapp/index.html
+          fi
+
+      - name: Copy CNAME for custom domain
+        run: |
+          if [ -f public/CNAME ]; then
+            cp public/CNAME element-web/webapp/CNAME
+          fi
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: element-web/webapp
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
