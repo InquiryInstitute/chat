@@ -63,11 +63,34 @@ jobs:
           # Script to automatically login as guest and navigate to room
           guest_script = '''<script>
           (function() {
-            // Immediately register as guest before Element loads
-            async function registerGuestAndNavigate() {
+            const TARGET_ROOM = "#/room/%23lobby:inquiry.institute";
+            const BASE_URL = "https://matrix.inquiry.institute";
+            
+            // Check if already authenticated
+            function hasAuthToken() {
+              return localStorage.getItem('mx_access_token') || 
+                     sessionStorage.getItem('mx_access_token') ||
+                     (() => {
+                       for(let i = 0; i < localStorage.length; i++) {
+                         const key = localStorage.key(i);
+                         if(key && (key.includes('access_token') || key.includes('matrix'))) {
+                           return localStorage.getItem(key);
+                         }
+                       }
+                       return null;
+                     })();
+            }
+            
+            // If already have token, just navigate
+            if(hasAuthToken() && window.location.hash !== TARGET_ROOM) {
+              window.location.hash = TARGET_ROOM;
+              return;
+            }
+            
+            // Register as guest
+            async function registerGuest() {
               try {
-                // Register as guest
-                const response = await fetch('https://matrix.inquiry.institute/_matrix/client/v3/register?kind=guest', {
+                const response = await fetch(`${BASE_URL}/_matrix/client/v3/register?kind=guest`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: '{}'
@@ -75,86 +98,111 @@ jobs:
                 
                 if(response.ok) {
                   const creds = await response.json();
-                  const baseUrl = 'https://matrix.inquiry.institute';
                   
-                  // Store in all possible formats Element might use
-                  const storageKeys = {
+                  // Store credentials in all formats Element might use
+                  const credsToStore = {
                     'mx_access_token': creds.access_token,
                     'mx_user_id': creds.user_id,
                     'mx_device_id': creds.device_id,
-                    'mx_hs_url': baseUrl,
+                    'mx_hs_url': BASE_URL,
                     'mx_is_url': 'https://vector.im',
-                    [`mx_access_token:${baseUrl}:${creds.user_id}`]: creds.access_token,
-                    'mx_credentials': JSON.stringify({
-                      accessToken: creds.access_token,
-                      userId: creds.user_id,
-                      deviceId: creds.device_id,
-                      homeServer: baseUrl
-                    })
+                    [`mx_access_token:${BASE_URL}:${creds.user_id}`]: creds.access_token
                   };
                   
-                  // Store in both localStorage and sessionStorage
-                  for(const [key, value] of Object.entries(storageKeys)) {
+                  // Store in localStorage and sessionStorage
+                  for(const [key, value] of Object.entries(credsToStore)) {
                     localStorage.setItem(key, value);
                     sessionStorage.setItem(key, value);
                   }
                   
-                  // Also try indexedDB if available (Element uses this)
-                  if('indexedDB' in window) {
-                    try {
-                      const dbRequest = indexedDB.open('matrix-js-sdk:react-sdk', 1);
-                      dbRequest.onsuccess = () => {
-                        const db = dbRequest.result;
-                        const tx = db.transaction(['keyvaluepairs'], 'readwrite');
-                        const store = tx.objectStore('keyvaluepairs');
-                        store.put(creds.access_token, `mx_access_token:${baseUrl}:${creds.user_id}`);
-                      };
-                    } catch(e) {}
-                  }
+                  // Navigate to room
+                  window.location.hash = TARGET_ROOM;
                   
-                  // Navigate directly to room - Element should detect the stored credentials
-                  window.location.hash = "#/room/%23lobby:inquiry.institute";
+                  // Reload after short delay to let Element initialize with credentials
+                  setTimeout(() => window.location.reload(), 300);
                   
-                  // Force reload to initialize Element with credentials
-                  setTimeout(() => {
-                    window.location.reload();
-                  }, 100);
-                } else {
-                  // If guest registration fails, try clicking "Explore room"
-                  console.log('Guest registration failed, trying Explore room');
-                  setTimeout(() => {
-                    const exploreLink = document.querySelector('a[href*="room"], a:contains("Explore")');
-                    if(exploreLink) {
-                      exploreLink.click();
-                    } else {
-                      // Navigate to room directly
-                      window.location.hash = "#/room/%23lobby:inquiry.institute";
-                    }
-                  }, 2000);
+                  return true;
                 }
               } catch(e) {
                 console.error('Guest registration error:', e);
-                // Fallback: navigate to room and hope Element allows guest access
-                window.location.hash = "#/room/%23lobby:inquiry.institute";
               }
+              return false;
             }
             
-            // Run immediately - before Element initializes
-            registerGuestAndNavigate();
-            
-            // Also listen for page load and try again if needed
-            if(document.readyState === 'loading') {
-              document.addEventListener('DOMContentLoaded', () => {
-                // Check if we're on welcome/login page and navigate to room
-                if(window.location.hash === '' || window.location.hash === '#' || window.location.hash === '#/' || window.location.hash === '#/welcome') {
-                  const token = localStorage.getItem('mx_access_token') || sessionStorage.getItem('mx_access_token');
-                  if(token) {
-                    // We have a token, force navigation to room
-                    window.location.hash = "#/room/%23lobby:inquiry.institute";
+            // Try to click "Explore room" link on welcome page
+            function tryClickExploreRoom() {
+              const exploreSelectors = [
+                'a[href*="room"]',
+                'a:contains("Explore")',
+                'a:contains("Browse")',
+                'a:contains("Public")',
+                '[role="link"][href*="room"]'
+              ];
+              
+              for(const sel of exploreSelectors) {
+                try {
+                  const link = document.querySelector(sel);
+                  if(link && link.href && link.href.includes('room')) {
+                    link.click();
+                    return true;
                   }
+                } catch(e) {}
+              }
+              
+              // Try finding by text content
+              const allLinks = document.querySelectorAll('a');
+              for(const link of allLinks) {
+                const text = (link.textContent || '').toLowerCase();
+                if((text.includes('explore') || text.includes('browse') || text.includes('room')) && link.href) {
+                  link.click();
+                  return true;
                 }
-              });
+              }
+              return false;
             }
+            
+            // Main flow: try guest registration, then fallback to clicking explore
+            registerGuest().then(success => {
+              if(!success) {
+                // If registration fails, wait for page to load and try clicking "Explore room"
+                if(document.readyState === 'loading') {
+                  document.addEventListener('DOMContentLoaded', () => {
+                    setTimeout(() => {
+                      if(!tryClickExploreRoom()) {
+                        // Last resort: navigate directly
+                        window.location.hash = TARGET_ROOM;
+                      }
+                    }, 1000);
+                  });
+                } else {
+                  setTimeout(() => {
+                    if(!tryClickExploreRoom()) {
+                      window.location.hash = TARGET_ROOM;
+                    }
+                  }, 1000);
+                }
+              }
+            });
+            
+            // Also monitor for welcome page and auto-navigate
+            const checkAndNavigate = () => {
+              if(window.location.hash === '' || window.location.hash === '#' || window.location.hash === '#/' || window.location.hash === '#/welcome') {
+                const token = hasAuthToken();
+                if(token) {
+                  window.location.hash = TARGET_ROOM;
+                } else {
+                  // Try clicking explore room
+                  tryClickExploreRoom();
+                }
+              }
+            };
+            
+            // Check periodically and on hash change
+            setInterval(checkAndNavigate, 2000);
+            window.addEventListener('hashchange', checkAndNavigate);
+            
+            // Initial check
+            checkAndNavigate();
           })();
           </script>'''
           
