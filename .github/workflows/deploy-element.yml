@@ -65,6 +65,7 @@ jobs:
           (function() {
             const TARGET_ROOM = "#/room/%23lobby:inquiry.institute";
             const BASE_URL = "https://matrix.inquiry.institute";
+            let guestRegistered = false;
             
             // Check if already authenticated
             function hasAuthToken() {
@@ -81,14 +82,10 @@ jobs:
                      })();
             }
             
-            // If already have token, just navigate
-            if(hasAuthToken() && window.location.hash !== TARGET_ROOM) {
-              window.location.hash = TARGET_ROOM;
-              return;
-            }
-            
-            // Register as guest
+            // Register as guest immediately
             async function registerGuest() {
+              if(guestRegistered) return true;
+              
               try {
                 const response = await fetch(`${BASE_URL}/_matrix/client/v3/register?kind=guest`, {
                   method: 'POST',
@@ -98,6 +95,7 @@ jobs:
                 
                 if(response.ok) {
                   const creds = await response.json();
+                  guestRegistered = true;
                   
                   // Store credentials in all formats Element might use
                   const credsToStore = {
@@ -115,11 +113,10 @@ jobs:
                     sessionStorage.setItem(key, value);
                   }
                   
-                  // Navigate to room
-                  window.location.hash = TARGET_ROOM;
-                  
-                  // Reload after short delay to let Element initialize with credentials
-                  setTimeout(() => window.location.reload(), 300);
+                  // Force navigation immediately
+                  if(window.location.hash !== TARGET_ROOM) {
+                    window.location.replace(window.location.origin + window.location.pathname + TARGET_ROOM);
+                  }
                   
                   return true;
                 }
@@ -128,6 +125,9 @@ jobs:
               }
               return false;
             }
+            
+            // Register guest immediately on page load
+            registerGuest();
             
             // Try to click "Explore room" link on welcome page
             function tryClickExploreRoom() {
@@ -180,67 +180,72 @@ jobs:
               return false;
             }
             
-            // Wait for page to fully load, then try strategies
-            function attemptGuestAccess() {
-              // Strategy 1: Try guest registration
-              registerGuest().then(success => {
-                if(!success) {
-                  // Strategy 2: If registration fails, try clicking "Explore room"
-                  const attemptExplore = () => {
-                    // Try immediately
-                    if(tryClickExploreRoom()) return true;
-                    
-                    // If not found, wait a bit and try again
-                    setTimeout(() => {
-                      if(tryClickExploreRoom()) return true;
-                      
-                      // Last resort: navigate directly to room
-                      window.location.hash = TARGET_ROOM;
-                    }, 1500);
-                    
-                    return false;
-                  };
-                  
-                  if(document.readyState === 'loading') {
-                    document.addEventListener('DOMContentLoaded', () => {
-                      setTimeout(attemptExplore, 500);
-                    });
-                  } else {
-                    setTimeout(attemptExplore, 500);
-                  }
+            // Aggressive navigation - force to room if on welcome page
+            function forceNavigation() {
+              const currentHash = window.location.hash;
+              const isWelcomePage = !currentHash || currentHash === '#' || currentHash === '#/' || currentHash === '#/welcome';
+              
+              if(isWelcomePage) {
+                // If we have a token, navigate immediately
+                if(hasAuthToken()) {
+                  window.location.replace(window.location.origin + window.location.pathname + TARGET_ROOM);
+                  return;
                 }
-              });
+                
+                // If no token yet, try registering again
+                registerGuest().then(() => {
+                  setTimeout(() => {
+                    window.location.replace(window.location.origin + window.location.pathname + TARGET_ROOM);
+                  }, 200);
+                });
+              }
             }
             
-            // Run immediately
-            attemptGuestAccess();
+            // Run immediately and repeatedly
+            forceNavigation();
             
-            // Also monitor for welcome page and auto-navigate or click explore
-            const checkAndNavigate = () => {
-              const currentHash = window.location.hash;
-              if(currentHash === '' || currentHash === '#' || currentHash === '#/' || currentHash === '#/welcome') {
-                const token = hasAuthToken();
-                if(token) {
-                  // We have a token, navigate directly
-                  window.location.hash = TARGET_ROOM;
-                } else {
-                  // No token yet, try clicking explore room
-                  setTimeout(() => {
-                    if(!tryClickExploreRoom()) {
-                      // If clicking fails, navigate anyway
-                      window.location.hash = TARGET_ROOM;
-                    }
-                  }, 500);
-                }
+            // Also try clicking explore room as backup
+            const tryExploreRoom = () => {
+              if(window.location.hash === '#/welcome' || !window.location.hash) {
+                setTimeout(() => {
+                  if(tryClickExploreRoom()) {
+                    return;
+                  }
+                  // If clicking fails, force navigation
+                  forceNavigation();
+                }, 1000);
               }
             };
             
-            // Check periodically (every 1 second) and on hash change
-            setInterval(checkAndNavigate, 1000);
-            window.addEventListener('hashchange', checkAndNavigate);
+            // Monitor for welcome page
+            const observer = new MutationObserver(() => {
+              if(window.location.hash === '#/welcome' || !window.location.hash) {
+                forceNavigation();
+                tryExploreRoom();
+              }
+            });
             
-            // Initial check after a short delay
-            setTimeout(checkAndNavigate, 500);
+            // Watch for hash changes
+            window.addEventListener('hashchange', () => {
+              if(window.location.hash === '#/welcome' || !window.location.hash) {
+                forceNavigation();
+              }
+            });
+            
+            // Check periodically
+            setInterval(() => {
+              if(window.location.hash === '#/welcome' || !window.location.hash) {
+                forceNavigation();
+                tryExploreRoom();
+              }
+            }, 500);
+            
+            // Try explore room after page loads
+            if(document.readyState === 'loading') {
+              document.addEventListener('DOMContentLoaded', tryExploreRoom);
+            } else {
+              setTimeout(tryExploreRoom, 1000);
+            }
           })();
           </script>'''
           
