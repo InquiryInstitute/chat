@@ -35,7 +35,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: element-web
-        run: npm ci
+        run: npm install
 
       - name: Copy custom config
         run: |
