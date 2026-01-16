@@ -1,0 +1,42 @@
+{
+  "default_server_config": {
+    "m.homeserver": {
+      "base_url": "https://matrix.inquiry.institute"
+    },
+    "m.identity_server": {
+      "base_url": "https://vector.im"
+    }
+  },
+  "default_server_name": "inquiry.institute",
+  "brand": "Inquiry Institute Chat",
+  "integrations_ui_url": "https://scalar.vector.im/",
+  "integrations_rest_url": "https://scalar.vector.im/api",
+  "integrations_widgets_urls": [
+    "https://scalar.vector.im/_matrix/integrations/v1",
+    "https://scalar.vector.im/api"
+  ],
+  "bug_report_endpoint_url": "https://element.io/bugreports/submit",
+  "defaultCountryCode": "US",
+  "showLabsSettings": true,
+  "features": {
+    "feature_new_spinner": true,
+    "feature_pinning": true,
+    "feature_custom_status": true,
+    "feature_custom_tags": true,
+    "feature_state_counters": true
+  },
+  "default_federate": true,
+  "default_theme": "light",
+  "roomDirectory": {
+    "servers": [
+      "inquiry.institute",
+      "matrix.org"
+    ]
+  },
+  "settingDefaults": {
+    "breadcrumbs": true
+  },
+  "jitsi": {
+    "preferredDomain": "meet.jit.si"
+  }
+}
