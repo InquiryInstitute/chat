@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  librechat:
+    image: ghcr.io/danny-avila/librechat:latest
+    container_name: librechat
+    restart: unless-stopped
+    ports:
+      - "3080:3080"
+    environment:
+      # Database (using SQLite for simplicity, can be changed to PostgreSQL)
+      - DATABASE_URI=sqlite:///data/librechat.db
+      
+      # LibreChat Configuration
+      - APP_TITLE=Inquiry Institute Chat
+      - APP_DOMAIN=chat.inquiry.institute
+      - ALLOW_REGISTRATION=false
+      - ALLOW_SOCIAL_LOGIN=false
+      
+      # Supabase LLM Gateway Configuration
+      # LibreChat will use this as a custom OpenAI endpoint
+      - OPENAI_API_KEY=${SUPABASE_ANON_KEY}
+      - OPENAI_BASE_URL=https://xougqdomkoisrxdnagcj.supabase.co/functions/v1/llm-gateway/v1
+      
+      # Optional: Set default model
+      - DEFAULT_MODEL=openai/gpt-oss-120b
+      
+      # JWT Secret (generate a secure random string)
+      - JWT_SECRET=${JWT_SECRET:-change-me-to-secure-random-string}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-change-me-to-secure-random-string}
+      
+      # File upload settings
+      - FILE_UPLOAD_SIZE_LIMIT=10
+      - FILE_UPLOAD_ALLOWED_TYPES=image/jpeg,image/png,image/gif,image/webp
+      
+    volumes:
+      - ./librechat-data:/data
+      - ./librechat-config:/app/config
+    networks:
+      - librechat-network
+
+networks:
+  librechat-network:
+    driver: bridge

@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  # Persona proxy - handles persona mapping before forwarding to llm-gateway
+  persona-proxy:
+    build:
+      context: .
+      dockerfile: Dockerfile.proxy
+    container_name: persona-proxy
+    restart: unless-stopped
+    ports:
+      - "3081:3081"
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL:-https://xougqdomkoisrxdnagcj.supabase.co}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - PROXY_PORT=3081
+    networks:
+      - librechat-network
+
+  # LibreChat - configured to use persona-proxy
+  librechat:
+    image: ghcr.io/danny-avila/librechat:latest
+    container_name: librechat
+    restart: unless-stopped
+    ports:
+      - "3080:3080"
+    environment:
+      # Database
+      - DATABASE_URI=sqlite:///data/librechat.db
+      
+      # LibreChat Configuration
+      - APP_TITLE=Inquiry Institute Chat
+      - APP_DOMAIN=chat.inquiry.institute
+      - ALLOW_REGISTRATION=false
+      - ALLOW_SOCIAL_LOGIN=false
+      
+      # Use persona-proxy instead of direct llm-gateway
+      - OPENAI_API_KEY=${SUPABASE_ANON_KEY}
+      - OPENAI_BASE_URL=http://persona-proxy:3081/v1
+      
+      # Optional: Set default model
+      - DEFAULT_MODEL=openai/gpt-oss-120b
+      
+      # JWT Secrets
+      - JWT_SECRET=${JWT_SECRET:-change-me-to-secure-random-string}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-change-me-to-secure-random-string}
+      
+      # File upload settings
+      - FILE_UPLOAD_SIZE_LIMIT=10
+      - FILE_UPLOAD_ALLOWED_TYPES=image/jpeg,image/png,image/gif,image/webp
+      
+    volumes:
+      - ./librechat-data:/data
+      - ./librechat-config:/app/config
+    depends_on:
+      - persona-proxy
+    networks:
+      - librechat-network
+
+networks:
+  librechat-network:
+    driver: bridge

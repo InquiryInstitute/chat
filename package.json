@@ -1,0 +1,22 @@
+{
+  "name": "inquiry-institute-chat",
+  "version": "1.0.0",
+  "description": "LibreChat frontend for Inquiry Institute with persona selection",
+  "main": "persona-proxy.js",
+  "scripts": {
+    "start:proxy": "node persona-proxy.js",
+    "dev:proxy": "nodemon persona-proxy.js"
+  },
+  "keywords": [
+    "librechat",
+    "llm",
+    "persona",
+    "chat"
+  ],
+  "author": "Inquiry Institute",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
