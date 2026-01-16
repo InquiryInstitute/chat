@@ -33,9 +33,18 @@ jobs:
         with:
           node-version: '18'
 
+      - name: Setup Yarn
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+        # Element Web uses Yarn for its monorepo
+
+      - name: Install Yarn
+        run: npm install -g yarn
+
       - name: Install dependencies
         working-directory: element-web
-        run: npm install
+        run: yarn install --frozen-lockfile
 
       - name: Copy custom config
         run: |
@@ -44,7 +53,7 @@ jobs:
       - name: Build Element Web
         working-directory: element-web
         run: |
-          npm run build
+          yarn build
 
       - name: Add redirect script to Element Web index.html
         run: |
