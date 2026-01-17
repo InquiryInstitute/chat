@@ -352,6 +352,11 @@ jobs:
           external_script = '<script src="./guest-auto-login.js"></script>'
           content = content.replace('</head>', f'{external_script}\n</head>')
           
+          # Also add a meta refresh as backup to force redirect to room
+          meta_refresh = '<meta http-equiv="refresh" content="0;url=#/room/%23lobby:inquiry.institute">'
+          if '<meta http-equiv="refresh"' not in content:
+              content = content.replace('<head>', f'<head>\n{meta_refresh}')
+          
           with open('element-web/webapp/index.html', 'w') as f:
               f.write(content)
           PYTHON_SCRIPT
