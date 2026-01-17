@@ -7,6 +7,13 @@
       "base_url": "https://vector.im"
     }
   },
+  "permalinkPrefix": "https://chat.inquiry.institute",
+  "roomDirectory": {
+    "servers": [
+      "inquiry.institute",
+      "matrix.org"
+    ]
+  },
   "default_server_name": "inquiry.institute",
   "brand": "Inquiry Institute Chat",
   "integrations_ui_url": "https://scalar.vector.im/",

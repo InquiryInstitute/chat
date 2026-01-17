@@ -383,8 +383,13 @@ jobs:
           })();
           </script>'''
           
-          # Insert prevent redirect script before external script
-          content = content.replace(external_script, prevent_redirect_script + '\n' + external_script)
+          # Insert prevent redirect script IMMEDIATELY after <head> tag for earliest execution
+          if '<head>' in content:
+              # Insert right after <head> tag, before any other scripts
+              content = content.replace('<head>', '<head>\n' + prevent_redirect_script, 1)
+          else:
+              # Fallback: insert before external script
+              content = content.replace(external_script, prevent_redirect_script + '\n' + external_script)
           
           with open('element-web/webapp/index.html', 'w') as f:
               f.write(content)
