@@ -41,7 +41,7 @@
   },
   "default_room_id": "#lobby:inquiry.institute",
   "welcomePageUrl": "#/room/%23lobby:inquiry.institute",
-  "disable_3pid_login": true,
+  "disable_3pid_login": false,
   "disable_custom_urls": false,
   "disable_guests": false,
   "embeddedPages": {
@@ -49,7 +49,14 @@
     "welcomeUrl": "#/room/%23lobby:inquiry.institute"
   },
   "disable_login_language_selector": true,
-  "disable_registration": true,
+  "disable_registration": false,
+  "sso_redirect_options": {
+    "on_login_page": true,
+    "on_welcome_page": false
+  },
+  "sso_immediate_redirect": false,
+  "sso_redirect_display": "popup",
+  "sso_redirect_uri": "https://inquiry.institute/auth/signin?redirect_to=https://chat.inquiry.institute",
   "default_welcome_page": "#/room/%23lobby:inquiry.institute",
   "enable_presence_by_hs_url": {
     "https://matrix.inquiry.institute": true
