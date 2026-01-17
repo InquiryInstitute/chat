@@ -50,8 +50,6 @@
   "welcomePageUrl": "#/room/%23lobby:inquiry.institute",
   "disable_3pid_login": false,
   "disable_custom_urls": false,
-  "disable_3pid_login": false,
-  "disable_login_language_selector": true,
   "disable_guests": false,
   "embeddedPages": {
     "loginForWelcome": false,
@@ -67,7 +65,6 @@
   "sso_redirect_display": "popup",
   "sso_redirect_uri": "https://inquiry.institute/auth/signin?redirect_to=https://chat.inquiry.institute",
   "default_welcome_page": "#/room/%23lobby:inquiry.institute",
-  "default_theme": "light",
   "defaultHomeServerName": "inquiry.institute",
   "defaultHomeServerUrl": "https://matrix.inquiry.institute",
   "enable_presence_by_hs_url": {
