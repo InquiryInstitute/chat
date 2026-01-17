@@ -333,14 +333,20 @@ jobs:
           })();
           </script>'''
           
-          # Insert CSS before </head> and script after guest_script
+          # Create external script file to avoid CSP issues
+          script_content = f'''{guest_script}
+{collapse_script}'''
+          
+          # Write to external file
+          with open('element-web/webapp/guest-auto-login.js', 'w') as f:
+              f.write(script_content.replace('<script>', '').replace('</script>', ''))
+          
+          # Insert CSS before </head>
           content = content.replace('</head>', f'{collapse_css}\n</head>')
           
-          # Insert guest script before </head>
-          content = content.replace('</head>', f'{guest_script}\n</head>')
-          
-          # Insert collapse script after guest script
-          content = content.replace(f'{guest_script}\n</head>', f'{guest_script}\n{collapse_script}\n</head>')
+          # Insert external script reference before </head>
+          external_script = '<script src="./guest-auto-login.js"></script>'
+          content = content.replace('</head>', f'{external_script}\n</head>')
           
           with open('element-web/webapp/index.html', 'w') as f:
               f.write(content)
