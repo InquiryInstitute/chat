@@ -333,13 +333,17 @@ jobs:
           })();
           </script>'''
           
+          # Extract script content (remove <script> tags)
+          guest_script_content = guest_script.replace('<script>', '').replace('</script>', '').strip()
+          collapse_script_content = collapse_script.replace('<script>', '').replace('</script>', '').strip()
+          
           # Create external script file to avoid CSP issues
-          script_content = f'''{guest_script}
-{collapse_script}'''
+          script_content = f'''{guest_script_content}
+{collapse_script_content}'''
           
           # Write to external file
           with open('element-web/webapp/guest-auto-login.js', 'w') as f:
-              f.write(script_content.replace('<script>', '').replace('</script>', ''))
+              f.write(script_content)
           
           # Insert CSS before </head>
           content = content.replace('</head>', f'{collapse_css}\n</head>')
