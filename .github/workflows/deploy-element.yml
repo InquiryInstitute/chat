@@ -53,12 +53,38 @@ jobs:
 
       - name: Add redirect and guest access script to Element Web index.html
         run: |
-          # Add script to automatically login as guest and join room
+          # Add script to automatically login as guest and join room, plus CSS to collapse left panel
           python3 << 'PYTHON_SCRIPT'
           import re
           
           with open('element-web/webapp/index.html', 'r') as f:
               content = f.read()
+          
+          # CSS to collapse left panel by default
+          collapse_css = '''<style>
+          /* Collapse left panel by default */
+          [aria-label="Spaces"] ~ div[class*="LeftPanel"],
+          [data-testid="left-panel"],
+          .mx_LeftPanel,
+          nav[aria-label="Spaces"] + div,
+          .mx_LeftPanel.mx_LeftPanel_collapsed,
+          /* Try to find and hide the left sidebar container */
+          body > div > div > div:first-child > div:first-child {
+            min-width: 64px !important;
+            width: 64px !important;
+            max-width: 64px !important;
+            flex-basis: 64px !important;
+          }
+          /* Hide content but keep icons */
+          .mx_LeftPanel [role="tree"],
+          [aria-label="Spaces"] + div > div:not(:first-child),
+          .mx_LeftPanel > div:not(:first-child) {
+            opacity: 0 !important;
+            pointer-events: none !important;
+            width: 0 !important;
+            overflow: hidden !important;
+          }
+          </style>'''
           
           # Script to automatically login as guest and navigate to room
           guest_script = '''<script>
@@ -249,8 +275,72 @@ jobs:
           })();
           </script>'''
           
-          # Insert before </head>
+          # Add script to collapse left panel after Element loads
+          collapse_script = '''<script>
+          (function() {
+            // Collapse left panel after Element loads
+            function collapseLeftPanel() {
+              // Wait for Element to fully load
+              const checkInterval = setInterval(() => {
+                // Try multiple selectors for the collapse button
+                const collapseButtons = [
+                  'button[aria-label*="Expand" i]',
+                  'button[aria-label*="Collapse" i]',
+                  '.mx_LeftPanel_collapse',
+                  'button:has(svg[class*="chevron"])',
+                  '[data-testid="collapse-left-panel"]'
+                ];
+                
+                let collapseBtn = null;
+                for(const selector of collapseButtons) {
+                  try {
+                    collapseBtn = document.querySelector(selector);
+                    if(collapseBtn && collapseBtn.offsetParent !== null) {
+                      break;
+                    }
+                  } catch(e) {}
+                }
+                
+                // If panel is expanded (has tree content visible), collapse it
+                const leftPanel = document.querySelector('[aria-label="Spaces"], .mx_LeftPanel');
+                if(leftPanel) {
+                  const tree = leftPanel.querySelector('[role="tree"]');
+                  if(tree && tree.offsetWidth > 0) {
+                    // Panel is expanded, try to collapse it
+                    if(collapseBtn) {
+                      collapseBtn.click();
+                    } else {
+                      // Force collapse via CSS
+                      if(!leftPanel.classList.contains('mx_LeftPanel_collapsed')) {
+                        leftPanel.classList.add('mx_LeftPanel_collapsed');
+                      }
+                    }
+                    clearInterval(checkInterval);
+                  }
+                }
+              }, 500);
+              
+              // Stop checking after 10 seconds
+              setTimeout(() => clearInterval(checkInterval), 10000);
+            }
+            
+            // Run when DOM is ready
+            if(document.readyState === 'loading') {
+              document.addEventListener('DOMContentLoaded', collapseLeftPanel);
+            } else {
+              setTimeout(collapseLeftPanel, 1000);
+            }
+          })();
+          </script>'''
+          
+          # Insert CSS before </head> and script after guest_script
+          content = content.replace('</head>', f'{collapse_css}\n</head>')
+          
+          # Insert guest script before </head>
           content = content.replace('</head>', f'{guest_script}\n</head>')
+          
+          # Insert collapse script after guest script
+          content = content.replace(f'{guest_script}\n</head>', f'{guest_script}\n{collapse_script}\n</head>')
           
           with open('element-web/webapp/index.html', 'w') as f:
               f.write(content)
