@@ -43,6 +43,8 @@
   "welcomePageUrl": "#/room/%23lobby:inquiry.institute",
   "disable_3pid_login": false,
   "disable_custom_urls": false,
+  "disable_3pid_login": false,
+  "disable_login_language_selector": true,
   "disable_guests": false,
   "embeddedPages": {
     "loginForWelcome": false,
