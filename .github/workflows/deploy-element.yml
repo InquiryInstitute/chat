@@ -309,23 +309,32 @@ jobs:
           
           # Add script to prevent redirects to app.element.io
           prevent_redirect_script = '''<script>
-          // Prevent redirects to app.element.io
+          // Prevent redirects to app.element.io and matrix.to
           (function() {
+            const TARGET_ROOM = "#/room/%23lobby:inquiry.institute";
             const originalReplace = window.location.replace;
             const originalAssign = window.location.assign;
             
+            function shouldBlock(url) {
+              return url && (url.includes('app.element.io') || url.includes('matrix.to'));
+            }
+            
+            function redirectToRoom() {
+              return window.location.origin + window.location.pathname + TARGET_ROOM;
+            }
+            
             window.location.replace = function(url) {
-              if (url && url.includes('app.element.io')) {
-                console.log('Blocked redirect to app.element.io, redirecting to room instead');
-                return originalReplace.call(window.location, window.location.origin + window.location.pathname + '#/room/%23lobby:inquiry.institute');
+              if (shouldBlock(url)) {
+                console.log('Blocked redirect to external site, redirecting to room instead');
+                return originalReplace.call(window.location, redirectToRoom());
               }
               return originalReplace.apply(window.location, arguments);
             };
             
             window.location.assign = function(url) {
-              if (url && url.includes('app.element.io')) {
-                console.log('Blocked redirect to app.element.io, redirecting to room instead');
-                return originalAssign.call(window.location, window.location.origin + window.location.pathname + '#/room/%23lobby:inquiry.institute');
+              if (shouldBlock(url)) {
+                console.log('Blocked redirect to external site, redirecting to room instead');
+                return originalAssign.call(window.location, redirectToRoom());
               }
               return originalAssign.apply(window.location, arguments);
             };
@@ -333,12 +342,44 @@ jobs:
             // Also intercept window.open
             const originalOpen = window.open;
             window.open = function(url, target, features) {
-              if (url && url.includes('app.element.io')) {
-                console.log('Blocked window.open to app.element.io');
+              if (shouldBlock(url)) {
+                console.log('Blocked window.open to external site');
+                window.location.hash = TARGET_ROOM;
                 return null;
               }
               return originalOpen.apply(window, arguments);
             };
+            
+            // Intercept clicks on matrix.to links
+            document.addEventListener('click', function(e) {
+              const link = e.target.closest('a[href]');
+              if (link && link.href && link.href.includes('matrix.to')) {
+                e.preventDefault();
+                e.stopPropagation();
+                const url = new URL(link.href);
+                const hash = url.hash || url.pathname;
+                if (hash.includes('lobby')) {
+                  window.location.hash = TARGET_ROOM;
+                } else {
+                  // Extract room from matrix.to URL and navigate
+                  const roomMatch = hash.match(/#([^:]+:[^/]+)/);
+                  if (roomMatch) {
+                    window.location.hash = '#/room/' + encodeURIComponent(roomMatch[1]);
+                  } else {
+                    window.location.hash = TARGET_ROOM;
+                  }
+                }
+                return false;
+              }
+            }, true);
+            
+            // Also intercept beforeunload if trying to navigate to matrix.to
+            window.addEventListener('beforeunload', function(e) {
+              if (document.referrer && document.referrer.includes('matrix.to')) {
+                // Don't allow navigation away if coming from matrix.to
+                return;
+              }
+            });
           })();
           </script>'''
           
