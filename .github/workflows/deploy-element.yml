@@ -352,10 +352,43 @@ jobs:
           external_script = '<script src="./guest-auto-login.js"></script>'
           content = content.replace('</head>', f'{external_script}\n</head>')
           
-          # Also add a meta refresh as backup to force redirect to room
-          meta_refresh = '<meta http-equiv="refresh" content="0;url=#/room/%23lobby:inquiry.institute">'
-          if '<meta http-equiv="refresh"' not in content:
-              content = content.replace('<head>', f'<head>\n{meta_refresh}')
+          # Add script to prevent redirects to app.element.io
+          prevent_redirect_script = '''<script>
+          // Prevent redirects to app.element.io
+          (function() {
+            const originalReplace = window.location.replace;
+            const originalAssign = window.location.assign;
+            
+            window.location.replace = function(url) {
+              if (url && url.includes('app.element.io')) {
+                console.log('Blocked redirect to app.element.io, redirecting to room instead');
+                return originalReplace.call(window.location, window.location.origin + window.location.pathname + '#/room/%23lobby:inquiry.institute');
+              }
+              return originalReplace.apply(window.location, arguments);
+            };
+            
+            window.location.assign = function(url) {
+              if (url && url.includes('app.element.io')) {
+                console.log('Blocked redirect to app.element.io, redirecting to room instead');
+                return originalAssign.call(window.location, window.location.origin + window.location.pathname + '#/room/%23lobby:inquiry.institute');
+              }
+              return originalAssign.apply(window.location, arguments);
+            };
+            
+            // Also intercept window.open
+            const originalOpen = window.open;
+            window.open = function(url, target, features) {
+              if (url && url.includes('app.element.io')) {
+                console.log('Blocked window.open to app.element.io');
+                return null;
+              }
+              return originalOpen.apply(window, arguments);
+            };
+          })();
+          </script>'''
+          
+          # Insert prevent redirect script before external script
+          content = content.replace(external_script, prevent_redirect_script + '\n' + external_script)
           
           with open('element-web/webapp/index.html', 'w') as f:
               f.write(content)
