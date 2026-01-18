@@ -53,7 +53,7 @@
   "disable_guests": false,
   "embeddedPages": {
     "loginForWelcome": false,
-    "welcomeUrl": "#/room/%23lobby:inquiry.institute"
+    "welcomeUrl": "#/room/!ZyUMuZyXZnnSvkkfwE:inquiry.institute"
   },
   "disable_login_language_selector": true,
   "disable_registration": false,
