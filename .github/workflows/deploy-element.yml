@@ -77,22 +77,28 @@ jobs:
             }
             
             // Also block location.href SETTER at the earliest possible moment
-            const originalHrefDescriptor = Object.getOwnPropertyDescriptor(window.location, 'href');
-            if (originalHrefDescriptor && originalHrefDescriptor.set) {
-              Object.defineProperty(window.location, 'href', {
-                set: function(url) {
-                  if (url && (url.includes('matrix.to') || url.includes('app.element.io'))) {
-                    console.log('[IMMEDIATE BLOCK] Prevented redirect to:', url);
-                    originalHrefDescriptor.set.call(window.location, window.location.origin + window.location.pathname + TARGET_ROOM);
-                    return;
-                  }
-                  originalHrefDescriptor.set.call(window.location, url);
-                },
-                get: function() {
-                  return originalHrefDescriptor.get ? originalHrefDescriptor.get.call(window.location) : window.location.href;
-                },
-                configurable: true
-              });
+            // Check if property descriptor already exists and is configurable
+            try {
+              const originalHrefDescriptor = Object.getOwnPropertyDescriptor(window.location, 'href');
+              if (originalHrefDescriptor && originalHrefDescriptor.set && originalHrefDescriptor.configurable) {
+                Object.defineProperty(window.location, 'href', {
+                  set: function(url) {
+                    if (url && (url.includes('matrix.to') || url.includes('app.element.io'))) {
+                      console.log('[IMMEDIATE BLOCK] Prevented redirect to:', url);
+                      originalHrefDescriptor.set.call(window.location, window.location.origin + window.location.pathname + TARGET_ROOM);
+                      return;
+                    }
+                    originalHrefDescriptor.set.call(window.location, url);
+                  },
+                  get: function() {
+                    return originalHrefDescriptor.get ? originalHrefDescriptor.get.call(window.location) : window.location.href;
+                  },
+                  configurable: true
+                });
+              }
+            } catch (e) {
+              // If href property cannot be redefined, skip it (may already be defined by another script)
+              console.warn('[IMMEDIATE] Could not redefine location.href:', e.message);
             }
           })();
           </script>'''
