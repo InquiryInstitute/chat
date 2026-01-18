@@ -421,6 +421,41 @@ jobs:
                 return;
               }
             });
+            
+            // Intercept navigation to login page - redirect to main site auth
+            const LOGIN_URL = 'https://inquiry.institute/auth/signin?redirect_to=' + encodeURIComponent(window.location.href);
+            function interceptLoginPage() {
+              const hash = window.location.hash;
+              if (hash && (hash === '#/login' || hash.startsWith('#/login'))) {
+                console.log('[BLOCK] Login page detected, redirecting to main site auth');
+                window.location.replace(LOGIN_URL);
+                return;
+              }
+              
+              // Also check if Element is showing a login UI
+              const loginElements = document.querySelectorAll('[data-testid*="login"], [aria-label*="Sign in"], [aria-label*="Log in"]');
+              for (const elem of loginElements) {
+                if (elem.offsetParent !== null) {
+                  const link = elem.closest('a') || elem;
+                  if (link && link.href && link.href.includes('login')) {
+                    console.log('[BLOCK] Login link detected, redirecting to main site');
+                    window.location.replace(LOGIN_URL);
+                    return;
+                  }
+                }
+              }
+            }
+            
+            // Run immediately and periodically
+            interceptLoginPage();
+            setInterval(interceptLoginPage, 500);
+            
+            // Also watch for hash changes to login
+            window.addEventListener('hashchange', function() {
+              if (window.location.hash && (window.location.hash === '#/login' || window.location.hash.startsWith('#/login'))) {
+                window.location.replace(LOGIN_URL);
+              }
+            });
           })();
           </script>'''
           
