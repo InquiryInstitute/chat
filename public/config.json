@@ -7,7 +7,8 @@
       "base_url": "https://vector.im"
     }
   },
-  "permalinkPrefix": "https://chat.inquiry.institute",
+  "permalink_prefix": "https://chat.inquiry.institute",
+  "useOwnUrlForSharingLinks": true,
   "roomDirectory": {
     "servers": [
       "inquiry.institute",
@@ -49,7 +50,7 @@
   "default_room_id": "!ZyUMuZyXZnnSvkkfwE:inquiry.institute",
   "welcomePageUrl": "#/room/!ZyUMuZyXZnnSvkkfwE:inquiry.institute",
   "disable_3pid_login": false,
-  "disable_custom_urls": false,
+  "disable_custom_urls": true,
   "disable_guests": false,
   "embeddedPages": {
     "loginForWelcome": false,

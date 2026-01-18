@@ -331,7 +331,7 @@ jobs:
           
           # Create external script file to avoid CSP issues
           script_content = f'''{guest_script_content}
-{collapse_script_content}'''
+          {collapse_script_content}'''
           
           # Write to external file
           with open('element-web/webapp/guest-auto-login.js', 'w') as f:
