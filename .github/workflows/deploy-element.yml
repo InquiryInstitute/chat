@@ -60,6 +60,43 @@ jobs:
           with open('element-web/webapp/index.html', 'r') as f:
               content = f.read()
           
+          # CRITICAL: Set initial hash immediately - before ANY other scripts
+          # This must be the very first thing that runs
+          immediate_hash_setter = '''<script>
+          (function() {
+            // IMMEDIATE execution - no waiting
+            const TARGET_ROOM = '#/room/!ZyUMuZyXZnnSvkkfwE:inquiry.institute';
+            
+            // Set hash IMMEDIATELY before anything else can redirect
+            if (!window.location.hash || 
+                window.location.hash === '#' || 
+                window.location.hash.startsWith('#/welcome') ||
+                window.location.hash.startsWith('#/login') ||
+                window.location.href.includes('matrix.to')) {
+              window.location.hash = TARGET_ROOM;
+            }
+            
+            // Also block location.href SETTER at the earliest possible moment
+            const originalHrefDescriptor = Object.getOwnPropertyDescriptor(window.location, 'href');
+            if (originalHrefDescriptor && originalHrefDescriptor.set) {
+              Object.defineProperty(window.location, 'href', {
+                set: function(url) {
+                  if (url && (url.includes('matrix.to') || url.includes('app.element.io'))) {
+                    console.log('[IMMEDIATE BLOCK] Prevented redirect to:', url);
+                    originalHrefDescriptor.set.call(window.location, window.location.origin + window.location.pathname + TARGET_ROOM);
+                    return;
+                  }
+                  originalHrefDescriptor.set.call(window.location, url);
+                },
+                get: function() {
+                  return originalHrefDescriptor.get ? originalHrefDescriptor.get.call(window.location) : window.location.href;
+                },
+                configurable: true
+              });
+            }
+          })();
+          </script>'''
+          
           # CSS to collapse left panel by default
           collapse_css = '''<style>
           /* Collapse left panel by default */
@@ -299,6 +336,10 @@ jobs:
           # Write to external file
           with open('element-web/webapp/guest-auto-login.js', 'w') as f:
               f.write(script_content)
+          
+          # Insert IMMEDIATE hash setter RIGHT AFTER <head> - before anything else
+          if '<head>' in content:
+              content = content.replace('<head>', '<head>\n' + immediate_hash_setter, 1)
           
           # Insert CSS before </head>
           content = content.replace('</head>', f'{collapse_css}\n</head>')
