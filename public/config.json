@@ -62,7 +62,7 @@
     "on_login_page": true,
     "on_welcome_page": false
   },
-  "sso_immediate_redirect": false,
+  "sso_immediate_redirect": true,
   "sso_redirect_display": "popup",
   "sso_redirect_uri": "https://inquiry.institute/auth/signin?redirect_to=https://chat.inquiry.institute",
   "default_welcome_page": "#/room/!ZyUMuZyXZnnSvkkfwE:inquiry.institute",
