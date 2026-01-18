@@ -89,7 +89,7 @@ jobs:
           # Script to automatically login as guest and navigate to room
           guest_script = '''<script>
           (function() {
-          const TARGET_ROOM = "#/room/%23lobby:inquiry.institute";
+          const TARGET_ROOM = "#/room/!ZyUMuZyXZnnSvkkfwE:inquiry.institute";
           const BASE_URL = "https://matrix.inquiry.institute";
           let guestRegistered = false;
           let navigationAttempted = false;
@@ -311,7 +311,7 @@ jobs:
           prevent_redirect_script = '''<script>
           // Prevent redirects to app.element.io and matrix.to
           (function() {
-            const TARGET_ROOM = "#/room/%23lobby:inquiry.institute";
+            const TARGET_ROOM = "#/room/!ZyUMuZyXZnnSvkkfwE:inquiry.institute";
             const originalReplace = window.location.replace;
             const originalAssign = window.location.assign;
             

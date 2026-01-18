@@ -46,8 +46,8 @@
   "jitsi": {
     "preferredDomain": "meet.jit.si"
   },
-  "default_room_id": "#lobby:inquiry.institute",
-  "welcomePageUrl": "#/room/%23lobby:inquiry.institute",
+  "default_room_id": "!ZyUMuZyXZnnSvkkfwE:inquiry.institute",
+  "welcomePageUrl": "#/room/!ZyUMuZyXZnnSvkkfwE:inquiry.institute",
   "disable_3pid_login": false,
   "disable_custom_urls": false,
   "disable_guests": false,
@@ -64,7 +64,7 @@
   "sso_immediate_redirect": false,
   "sso_redirect_display": "popup",
   "sso_redirect_uri": "https://inquiry.institute/auth/signin?redirect_to=https://chat.inquiry.institute",
-  "default_welcome_page": "#/room/%23lobby:inquiry.institute",
+  "default_welcome_page": "#/room/!ZyUMuZyXZnnSvkkfwE:inquiry.institute",
   "defaultHomeServerName": "inquiry.institute",
   "defaultHomeServerUrl": "https://matrix.inquiry.institute",
   "enable_presence_by_hs_url": {
