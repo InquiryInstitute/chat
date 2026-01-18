@@ -424,13 +424,16 @@ jobs:
           })();
           </script>'''
           
-          # Insert prevent redirect script IMMEDIATELY after <head> tag for earliest execution
+          # Insert BOTH immediate hash setter AND prevent redirect script RIGHT AFTER <head>
+          # Combined script that runs immediately before anything else
           if '<head>' in content:
-              # Insert right after <head> tag, before any other scripts
-              content = content.replace('<head>', '<head>\n' + prevent_redirect_script, 1)
+              # Combine both scripts - immediate hash setter first, then redirect blocker
+              combined_scripts = immediate_hash_setter + '\n' + prevent_redirect_script
+              content = content.replace('<head>', '<head>\n' + combined_scripts, 1)
           else:
               # Fallback: insert before external script
-              content = content.replace(external_script, prevent_redirect_script + '\n' + external_script)
+              combined_scripts = immediate_hash_setter + '\n' + prevent_redirect_script
+              content = content.replace(external_script, combined_scripts + '\n' + external_script)
           
           with open('element-web/webapp/index.html', 'w') as f:
               f.write(content)
