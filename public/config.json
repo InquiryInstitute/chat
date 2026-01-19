@@ -65,6 +65,17 @@
   "sso_immediate_redirect": true,
   "sso_redirect_display": "popup",
   "sso_redirect_uri": "https://inquiry.institute/auth/signin?redirect_to=https://chat.inquiry.institute",
+  "oidc_static_clients": [
+    {
+      "client_id": "https://pilmscrodlitdrygabvo.supabase.co",
+      "client_secret": null,
+      "issuer": "https://pilmscrodlitdrygabvo.supabase.co",
+      "authorization_endpoint": "https://pilmscrodlitdrygabvo.supabase.co/auth/v1/authorize",
+      "token_endpoint": "https://pilmscrodlitdrygabvo.supabase.co/auth/v1/token",
+      "userinfo_endpoint": "https://pilmscrodlitdrygabvo.supabase.co/auth/v1/userinfo",
+      "jwks_uri": "https://pilmscrodlitdrygabvo.supabase.co/auth/v1/.well-known/jwks.json"
+    }
+  ],
   "default_welcome_page": "#/room/!ZyUMuZyXZnnSvkkfwE:inquiry.institute",
   "defaultHomeServerName": "inquiry.institute",
   "defaultHomeServerUrl": "https://matrix.inquiry.institute",
