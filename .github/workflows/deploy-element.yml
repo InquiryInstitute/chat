@@ -482,8 +482,13 @@ jobs:
 
       - name: Copy CNAME for custom domain
         run: |
+          # Copy CNAME for chat.inquiry.institute (default)
           if [ -f public/CNAME ]; then
             cp public/CNAME element-web/webapp/CNAME
+          fi
+          # Also copy CNAME-element for element.inquiry.institute if exists
+          if [ -f public/CNAME-element ]; then
+            cp public/CNAME-element element-web/webapp/CNAME-element
           fi
 
       - name: Setup Pages
